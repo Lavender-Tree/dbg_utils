@@ -49,6 +49,6 @@ def ida_dbg(p):
 
             gdb_cmd += 'b *${}\n'.format(b['name'])
         else:
-            gdb_cmd += 'b *${}\n'.format(hex(p))
+            gdb_cmd += 'b *{}\n'.format(hex(p))
     
     return gdb_cmd
