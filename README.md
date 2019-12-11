@@ -9,7 +9,7 @@ pip install dbg_utils
 
 ### IDA
 
-复制 `idp.py` 到 `[IDA INSTALL PATH]/plugins/ida.py` 
+复制 `idp.py` 到 `[IDA INSTALL PATH]/plugins/idp.py` 
 
 
 ## 使用
