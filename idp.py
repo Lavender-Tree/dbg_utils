@@ -81,6 +81,8 @@ class IDPSyn(object):
 # 
 rsyn = None
 
+user_env = []
+
 #--------------------------------------------------------------------------
 # Plugin
 #--------------------------------------------------------------------------
@@ -90,8 +92,6 @@ class IDP_Plugin_t(idaapi.plugin_t):
     wanted_name = "GDB Debug Utils"
     wanted_hotkey = "Ctrl-Alt-D"
     flags = idaapi.PLUGIN_KEEP
-    
-    user_env = []
 
     def init(self):
         global rsyn
@@ -132,12 +132,11 @@ class IDP_Plugin_t(idaapi.plugin_t):
 
     def run(self, ctx):
         img_base = idaapi.get_imagebase()
-        bl = self.get_all_bp()
-        envs = self.user_env 
+        bl = self.get_all_bp() 
 
         rsyn.syn({
             'elf_base': img_base, 
-            'envs': envs, 
+            'envs': user_env, 
             'bl': bl})
 
     
@@ -147,24 +146,25 @@ class IDP_Plugin_t(idaapi.plugin_t):
             json.dump(cfg, f)
 
 
-idp_plugin = None
-
 
 ### user defined environments
 def add_env(name, ea, abs_ea=False):
-    idp_plugin.user_env.append({
+    global user_env
+
+    user_env.append({
         'name': name,
         'ptr': ea, 
         'abs_ptr': abs_ea
     })
 
 def del_env(name, ea, abs_ea=False):
+    global user_env
     item = {
         'name': name,
         'ptr': ea, 
         'abs_ptr': abs_ea
     }
-    idp_plugin.user_env.pop(
+    user_env.pop(
         idp_plugin.user_env.index(item)
     )
 
@@ -177,7 +177,6 @@ def config(ip, port):
 
 # register IDA plugin
 def PLUGIN_ENTRY():
-    global idp_plugin
     idp_plugin = IDP_Plugin_t()
     return idp_plugin
 
