@@ -4,15 +4,19 @@
 
 ### Python 
 ```sh
-pip install dbg_utils
+python -m pip install dbg_utils
+# try "sudo python setup.py install" when fail
 ```
+
 
 ### IDA
 
 复制 `idp.py` 到 `[IDA INSTALL PATH]/plugins/idp.py` 
 
 
+
 ## 使用
+
 
 ### 服务端
 

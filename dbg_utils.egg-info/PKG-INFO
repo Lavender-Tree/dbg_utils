@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: dbg-utils
+Version: 1.9.0
+Summary: dbg utils for gdb
+Home-page: https://github.com/Lavender-Tree/dbg_utils
+Author: Lavender-Tree
+Author-email: lavender.tree9988@gmail.com
+License: MIT Licence
+Description: UNKNOWN
+Keywords: pip,pwn,dbg
+Platform: any
+Description-Content-Type: text/markdown

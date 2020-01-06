@@ -22,7 +22,7 @@ class IDPSSInstall(install):
 
 setup(
     name = "dbg_utils",
-    version = "0.1.2",
+    version = "1.9.0",
     keywords = ["pip", "pwn", "dbg"],
     description = "dbg utils for gdb",
     long_description_content_type='text/markdown',

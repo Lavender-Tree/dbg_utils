@@ -31,6 +31,51 @@ DEF_CFG = {
 cfg = None
 
 
+class UserEnvs(object):
+    __envs = {}
+
+    def __init__(self, envs={}):
+        self.load()
+        if isinstance(envs, dict):
+            for key, val in envs.items():
+                self.__envs[key] = val
+        elif isinstance(envs, str):
+            for key, val in self.unpack(envs).items():
+                self.__envs[key] = val
+
+    def add(self, name, va):
+        self.__envs[name] = va - idaapi.get_imagebase()
+        self.save()
+
+    def add_abs(self, name, va):
+        self.__envs[name] = va
+        self.save()
+    
+    def delete(self, name):
+        if name in self.__envs:
+            self.__envs.__delitem__(name)
+        self.save()
+
+    def pack(self):
+        return self.__envs
+    
+    def unpack(self, buf):
+        return json.loads(buf)
+
+    def save(self):
+        path = os.path.join(os.getcwd(), "uenvs.json")
+        with open(path, "w") as f:
+            json.dump(self.__envs, f)
+
+    def load(self):
+        path = os.path.join(os.getcwd(), "uenvs.json")
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                self.__envs = json.load(f)
+
+uenvs = UserEnvs()
+
+
 class IDPSyn(object):
 
     def connect(self):
@@ -65,7 +110,7 @@ class IDPSyn(object):
         self.sock.send('START_SYN')
         buf = self.sock.recv(100)
         if b'SERVER_OK' in buf:
-            self.sock.send(json.dumps(envs))
+            self.sock.send(envs)
             buf = self.sock.recv(100)
             if b'SYN_FINISH' not in buf:
                 print('SYN FAIL')
@@ -80,8 +125,6 @@ class IDPSyn(object):
 
 # 
 rsyn = None
-
-user_env = []
 
 #--------------------------------------------------------------------------
 # Plugin
@@ -120,53 +163,29 @@ class IDP_Plugin_t(idaapi.plugin_t):
 
 
     def get_all_bp(self):
-        bl = []
+        bl = {}
         n_bl = GetBptQty()
+        base = idaapi.get_imagebase()
         for i in range(n_bl):
             ea = GetBptEA(i)
-            bl.append({
-                'name': get_ea_name(ea), 
-                'ptr': ea, 
-                'abs_ptr': False})
+            name = get_ea_name(ea)
+            ea -= base
+            if name == '':
+                name = 'block_' + hex(ea)[2:]
+            bl[name] = ea
         return bl 
 
     def run(self, ctx):
-        img_base = idaapi.get_imagebase()
         bl = self.get_all_bp() 
 
-        rsyn.syn({
-            'elf_base': img_base, 
-            'envs': user_env, 
-            'bl': bl})
-
+        rsyn.syn(json.dumps({
+            'envs': uenvs.pack(), 
+            'bl': bl}))
     
     def term(self):
         print("IDP term")
         with open(IDP_CFGFILE, "w") as f:
             json.dump(cfg, f)
-
-
-
-### user defined environments
-def add_env(name, ea, abs_ea=False):
-    global user_env
-
-    user_env.append({
-        'name': name,
-        'ptr': ea, 
-        'abs_ptr': abs_ea
-    })
-
-def del_env(name, ea, abs_ea=False):
-    global user_env
-    item = {
-        'name': name,
-        'ptr': ea, 
-        'abs_ptr': abs_ea
-    }
-    user_env.pop(
-        idp_plugin.user_env.index(item)
-    )
 
 
 ### config when in idapython
