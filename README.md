@@ -21,7 +21,7 @@ python -m pip install dbg_utils
 ### 服务端
 
 ```sh
-idpss
+systemctl start idpss
 ```
 
 ### IDA
@@ -29,7 +29,7 @@ idpss
 - 配置
 
 ```python
-config(server_ip, server_port)
+idp_config(server_ip, server_port)
 ```
 
 - 同步 断点、变量
