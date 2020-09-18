@@ -1,3 +1,5 @@
 .vscode
 *.pyc
 test
+.eggs
+*.egg-info
