@@ -1,11 +1,11 @@
+#!/usr/bin/python
+
 import socket
 import json 
 import os
 import signal
 import sys
 from dbg_utils.config import cfg, load_cfg, save_cfg
-
-
 
 class IDPSynServer(object):
     

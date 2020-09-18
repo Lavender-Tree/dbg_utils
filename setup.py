@@ -1,43 +1,43 @@
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 import os
+import shutil
+
 
 class IDPSSInstall(install):
     """Post-installation for installation mode."""
     def run(self):
-        # PUT YOUR POST-INSTALL SCRIPT HERE or CALL A FUNCTION
-
-        with open("/tmp/idpss", "w") as f:
-            f.writelines([
-                "#!/usr/bin/python\n",
-                "from dbg_utils.idp_server import idpss\n",
-                "idpss.start()\n"
-            ])
-            f.close()
+        # install idpss
+        idpss_path = '/usr/bin/idpss'
+        shutil.copy('dbg_utils/idp_server.py', idpss_path)
+        os.system('chmod +x ' + idpss_path)
         
-        os.system('chmod +x /tmp/idpss')
-        os.system('sudo cp /tmp/idpss  /usr/bin/idpss')
-
+        # install idpss systemd service
+        shutil.copy('idpss/systemd/idpss.service', '/etc/systemd/system/')
+        
         install.run(self)
+
 
 setup(
     name = "dbg_utils",
-    version = "1.9.0",
     keywords = ["pip", "pwn", "dbg"],
     description = "dbg utils for gdb",
     long_description_content_type='text/markdown',
     license = "MIT Licence",
 
-    cmdclass={
-        'install': IDPSSInstall,
-    },
+    setup_requires=['setuptools_scm'],
+    use_scm_version=True,
 
-    author = "Lavender-Tree",
+    author = "agfn",
     author_email = "lavender.tree9988@gmail.com",
-    url='https://github.com/Lavender-Tree/dbg_utils',
+    url='https://github.com/agfn/dbg_utils',
 
     packages = find_packages(),
     include_package_data = True,
     platforms = "any",
-    install_requires = []
+    install_requires = [],
+    
+    cmdclass={
+        'install': IDPSSInstall,
+    },
 )

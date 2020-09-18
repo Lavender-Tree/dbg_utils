@@ -3,32 +3,39 @@
 import os
 import re
 import json
-import idc
-import idaapi
-from idc import GetOpType, GetOpnd, ItemEnd
-from idc_bc695 import *
-from ida_name import *
 import socket
+import idaapi
 
 
-VERSION = "0.1.0"
+class Config(dict):
+    IDP_CFGFILE = os.path.join(idaapi.get_user_idadir(), "cfg", "idp.cfg")
 
+    DEF_CFG = {
+        'ip': '192.168.23.134',
+        'port': 19988
+    }
 
-IDP_GITHUB = "https://github.com/Lavender-Tree/dbg_utils"
+    def __init__(self, path=IDP_CFGFILE, default=DEF_CFG):
+        self.path = path
+        if not os.path.exists(path):
+            json.dump(default, open(self.path, 'w'), indent=4)
+        self.cfg = json.load(open(path))
+        for k, v in default.items():
+            if not (k in self.cfg and self.cfg[k] is not None):
+                self.__setitem__(k, v)
 
+    def __getitem__(self, key):
+        return self.cfg[key]
 
-# Configuration file
-IDP_CFGFILE = os.path.join(idaapi.get_user_idadir(), "idp.cfg")
-
-# default configuration
-DEF_CFG = {
-    'ip': '192.168.23.134',
-    'port': 19988
-}
+    def __setitem__(self, key, val):
+        if key in self.cfg and self.cfg[key] == val:
+            return
+        self.cfg[key] = val
+        json.dump(self.cfg, open(self.path, 'w'), indent=4)
 
 
 # 
-cfg = None
+cfg = Config()
 
 
 class UserEnvs(object):
@@ -107,10 +114,10 @@ class IDPSyn(object):
             print(cfg)
             return
 
-        self.sock.send('START_SYN')
+        self.sock.send(b'START_SYN')
         buf = self.sock.recv(100)
         if b'SERVER_OK' in buf:
-            self.sock.send(envs)
+            self.sock.send(envs.encode())
             buf = self.sock.recv(100)
             if b'SYN_FINISH' not in buf:
                 print('SYN FAIL')
@@ -131,49 +138,30 @@ rsyn = None
 #--------------------------------------------------------------------------
 class IDP_Plugin_t(idaapi.plugin_t):
     comment = "GDB Debug Utils (IDA Plugin)"
-    help = IDP_GITHUB + '/README.md'
+    help = 'https://github.com/agfn/dbg_utils/README.md'
     wanted_name = "GDB Debug Utils"
     wanted_hotkey = "Ctrl-Alt-D"
     flags = idaapi.PLUGIN_KEEP
 
     def init(self):
         global rsyn
-
         print("GDB Debug Utils Loading")
-
-        print('Load Config')
-        self.load_cfg()
-
         print('Load Syn')
         rsyn = IDPSyn()
-
         return idaapi.PLUGIN_OK
-    
-
-    def load_cfg(self):
-        global cfg
-
-        try:
-            with open(IDP_CFGFILE, "r") as f:
-                cfg = json.load(f)
-        except:
-            print('{} not found, use default setting'
-                .format(IDP_CFGFILE))
-            cfg = DEF_CFG
-
 
     def get_all_bp(self):
         bl = {}
-        n_bl = GetBptQty()
+        n_bl = idaapi.get_bpt_qty()
         base = idaapi.get_imagebase()
         for i in range(n_bl):
-            ea = GetBptEA(i)
-            name = get_ea_name(ea)
+            ea = idaapi.get_bpt_tev_ea(i)
+            name = idaapi.get_ea_name(ea)
             ea -= base
             if name == '':
                 name = 'block_' + hex(ea)[2:]
             bl[name] = ea
-        return bl 
+        return bl
 
     def run(self, ctx):
         bl = self.get_all_bp() 
@@ -184,15 +172,14 @@ class IDP_Plugin_t(idaapi.plugin_t):
     
     def term(self):
         print("IDP term")
-        with open(IDP_CFGFILE, "w") as f:
-            json.dump(cfg, f)
 
 
 ### config when in idapython
-def config(ip, port):
+def idp_config(ip, port):
     global cfg
     cfg['ip'] = ip 
     cfg['port'] = port
+
 
 # register IDA plugin
 def PLUGIN_ENTRY():
